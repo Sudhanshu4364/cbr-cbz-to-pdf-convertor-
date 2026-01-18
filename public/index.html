@@ -935,6 +935,341 @@
                 font-size: 2.8em;
             }
         }
+
+        /* Editor Styles */
+        .editor-container {
+            display: none;
+            margin: 25px 0;
+        }
+
+        .editor-container.show {
+            display: block;
+        }
+
+        .editor-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 18px;
+            background: rgba(255, 107, 74, 0.08);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 107, 74, 0.2);
+        }
+
+        .editor-header h3 {
+            margin: 0;
+            color: var(--accent-orange);
+            font-size: 1.2em;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+        }
+
+        .editor-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .editor-action-btn {
+            padding: 10px 20px;
+            background: rgba(255, 107, 74, 0.15);
+            border: 1.5px solid rgba(255, 107, 74, 0.4);
+            color: var(--accent-orange);
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .editor-action-btn:hover {
+            background: rgba(255, 107, 74, 0.25);
+            border-color: rgba(255, 107, 74, 0.7);
+            transform: translateY(-2px);
+        }
+
+        .editor-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+            max-height: 600px;
+            overflow-y: auto;
+            padding: 10px;
+            background: rgba(255, 107, 74, 0.03);
+            border-radius: 12px;
+        }
+
+        .editor-grid::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        .editor-grid::-webkit-scrollbar-track {
+            background: rgba(255, 107, 74, 0.05);
+            border-radius: 5px;
+        }
+
+        .editor-grid::-webkit-scrollbar-thumb {
+            background: rgba(255, 107, 74, 0.4);
+            border-radius: 5px;
+        }
+
+        .editor-grid::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 107, 74, 0.6);
+        }
+
+        .page-card {
+            background: rgba(20, 20, 25, 0.5);
+            border: 2px solid rgba(255, 107, 74, 0.3);
+            border-radius: 12px;
+            padding: 12px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .page-card:hover {
+            border-color: rgba(255, 107, 74, 0.6);
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(255, 107, 74, 0.3);
+        }
+
+        .page-card.removed {
+            opacity: 0.4;
+            border-color: rgba(255, 68, 68, 0.5);
+            background: rgba(255, 68, 68, 0.1);
+        }
+
+        .page-card.removed::after {
+            content: 'REMOVED';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-15deg);
+            font-size: 1.5em;
+            font-weight: 900;
+            color: rgba(255, 68, 68, 0.8);
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .page-number {
+            font-size: 0.85em;
+            color: var(--accent-orange);
+            font-weight: 700;
+            margin-bottom: 8px;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .page-preview {
+            width: 100%;
+            height: 250px;
+            background: rgba(255, 107, 74, 0.05);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .page-preview img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        .page-preview.loading {
+            background: linear-gradient(90deg, 
+                rgba(255, 107, 74, 0.05) 0%, 
+                rgba(255, 107, 74, 0.15) 50%, 
+                rgba(255, 107, 74, 0.05) 100%);
+            background-size: 200% 100%;
+            animation: loading-shimmer 1.5s infinite;
+        }
+
+        @keyframes loading-shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .page-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .bg-toggle {
+            display: flex;
+            gap: 6px;
+            background: rgba(255, 107, 74, 0.08);
+            padding: 6px;
+            border-radius: 8px;
+        }
+
+        .bg-option {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1.5px solid rgba(255, 107, 74, 0.3);
+            background: transparent;
+            color: rgba(226, 232, 240, 0.7);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8em;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+        }
+
+        .bg-option.active {
+            background: linear-gradient(135deg, #ff6b4a, #ff8566);
+            color: white;
+            border-color: rgba(255, 107, 74, 0.8);
+        }
+
+        .bg-option:hover:not(.active) {
+            border-color: rgba(255, 107, 74, 0.6);
+            background: rgba(255, 107, 74, 0.1);
+        }
+
+        .remove-page-btn {
+            padding: 10px;
+            background: rgba(255, 68, 68, 0.15);
+            border: 1.5px solid rgba(255, 68, 68, 0.4);
+            color: #ff8a8a;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.85em;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+        }
+
+        .remove-page-btn:hover {
+            background: rgba(255, 68, 68, 0.25);
+            border-color: rgba(255, 68, 68, 0.7);
+        }
+
+        .remove-page-btn.restore {
+            background: rgba(34, 197, 94, 0.15);
+            border-color: rgba(34, 197, 94, 0.4);
+            color: #86efac;
+        }
+
+        .remove-page-btn.restore:hover {
+            background: rgba(34, 197, 94, 0.25);
+            border-color: rgba(34, 197, 94, 0.7);
+        }
+
+        .editor-stats {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+            padding: 18px;
+            background: rgba(255, 107, 74, 0.08);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 107, 74, 0.2);
+        }
+
+        .editor-stat {
+            text-align: center;
+        }
+
+        .editor-stat-value {
+            font-size: 1.8em;
+            font-weight: 700;
+            color: var(--accent-orange);
+            display: block;
+        }
+
+        .editor-stat-label {
+            font-size: 0.85em;
+            color: rgba(226, 232, 240, 0.7);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .file-selector-section {
+            display: none;
+            margin: 25px 0;
+        }
+
+        .file-selector-section.show {
+            display: block;
+        }
+
+        .file-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            padding: 15px;
+            background: rgba(255, 107, 74, 0.05);
+            border-radius: 12px;
+        }
+
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 18px;
+            background: rgba(255, 107, 74, 0.08);
+            border: 1.5px solid rgba(255, 107, 74, 0.3);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .file-item:hover {
+            background: rgba(255, 107, 74, 0.15);
+            border-color: rgba(255, 107, 74, 0.6);
+            transform: translateX(5px);
+        }
+
+        .file-item.active {
+            background: linear-gradient(135deg, #ff6b4a, #ff8566);
+            border-color: rgba(255, 107, 74, 0.9);
+            color: white;
+        }
+
+        .file-item-name {
+            font-weight: 600;
+            font-size: 0.95em;
+        }
+
+        .file-item-pages {
+            font-size: 0.85em;
+            color: rgba(226, 232, 240, 0.7);
+        }
+
+        .file-item.active .file-item-pages {
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        @media (max-width: 1200px) {
+            .editor-actions {
+                flex-direction: column;
+            }
+            
+            .editor-action-btn {
+                width: 100%;
+            }
+            
+            .editor-grid {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+                max-height: 500px;
+            }
+            
+            .page-preview {
+                height: 200px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -946,6 +1281,7 @@
             <div class="mode-toggle">
                 <button class="mode-btn active" data-mode="single">Single</button>
                 <button class="mode-btn" data-mode="batch">Batch</button>
+                <button class="mode-btn" data-mode="combination">Combination</button>
             </div>
 
             <div class="upload-area" id="uploadArea">
@@ -988,6 +1324,9 @@
                 <button class="btn-secondary" id="advancedBtn" disabled>
                     Advanced
                 </button>
+                <button class="btn-secondary" id="editorBtn" disabled>
+                    Editor
+                </button>
                 <button class="btn-secondary" id="resetBtn">
                     Clear
                 </button>
@@ -1002,7 +1341,66 @@
                 </button>
             </div>
 
+            <div class="button-group" id="combinationButtonGroup" style="display: none;">
+                <button class="btn-primary" id="combinationConvertBtn" disabled>
+                    🔗 Combine into One PDF
+                </button>
+                <button class="btn-secondary" id="combinationEditorBtn" disabled>
+                    🎨 Editor
+                </button>
+                <button class="btn-secondary" id="combinationClearBtn">
+                    Clear All
+                </button>
+            </div>
+
             <div class="status-message" id="statusMessage"></div>
+
+            <!-- File Selector for Combination Mode -->
+            <div class="file-selector-section" id="fileSelectorSection">
+                <div class="info-box">
+                    <p><strong>📂 Select a file to edit:</strong></p>
+                </div>
+                <div class="file-list" id="fileList"></div>
+            </div>
+
+            <!-- Editor Container -->
+            <div class="editor-container" id="editorContainer">
+                <div class="editor-header">
+                    <h3>📝 Page Editor</h3>
+                    <div class="editor-actions">
+                        <button class="editor-action-btn" id="selectAllBtn">Select All</button>
+                        <button class="editor-action-btn" id="deselectAllBtn">Deselect All</button>
+                        <button class="editor-action-btn" id="allWhiteBtn">All White BG</button>
+                        <button class="editor-action-btn" id="allBlackBtn">All Black BG</button>
+                    </div>
+                </div>
+                
+                <div class="editor-grid" id="editorGrid"></div>
+                
+                <div class="editor-stats">
+                    <div class="editor-stat">
+                        <span class="editor-stat-value" id="totalPagesEditor">0</span>
+                        <span class="editor-stat-label">Total Pages</span>
+                    </div>
+                    <div class="editor-stat">
+                        <span class="editor-stat-value" id="includedPages">0</span>
+                        <span class="editor-stat-label">Included</span>
+                    </div>
+                    <div class="editor-stat">
+                        <span class="editor-stat-value" id="removedPages">0</span>
+                        <span class="editor-stat-label">Removed</span>
+                    </div>
+                </div>
+                
+                <div class="button-group" id="editorButtonGroup" style="margin-top: 25px;">
+                    <button class="btn-primary" id="applyEditorBtn">
+                        ✅ Apply & Convert
+                    </button>
+                    <button class="btn-secondary" id="closeEditorBtn">
+                        Cancel
+                    </button>
+                </div>
+            </div>
 
             <div class="modal" id="advancedModal">
                 <div class="modal-content">
@@ -1068,6 +1466,7 @@
         const modeBtns = document.querySelectorAll('.mode-btn');
         const singleButtonGroup = document.getElementById('singleButtonGroup');
         const batchButtonGroup = document.getElementById('batchButtonGroup');
+        const combinationButtonGroup = document.getElementById('combinationButtonGroup')
         const batchQueue = document.getElementById('batchQueue');
 
         modeBtns.forEach(btn => {
@@ -1079,6 +1478,7 @@
                 if (currentMode === 'batch') {
                     singleButtonGroup.style.display = 'none';
                     batchButtonGroup.style.display = 'flex';
+                    combinationButtonGroup.style.display = 'none';
                     fileInput.multiple = true;
                     uploadArea.innerHTML = `
                         <span class="upload-icon">📦</span>
@@ -1086,9 +1486,21 @@
                         <small>Maximum file size: 500MB per file • Max 20 files</small>
                     `;
                     batchQueue.classList.add('show');
+                } else if (currentMode === 'combination') {
+                    singleButtonGroup.style.display = 'none';
+                    batchButtonGroup.style.display = 'none';
+                    combinationButtonGroup.style.display = 'flex';
+                    fileInput.multiple = true;
+                    uploadArea.innerHTML = `
+                        <span class="upload-icon">🔗</span>
+                        <p>Click or drag multiple <span class="highlight">CBR/CBZ files</span> here</p>
+                        <small>All files will be merged into ONE PDF • Max 20 files</small>
+                    `;
+                    batchQueue.classList.add('show');
                 } else {
                     singleButtonGroup.style.display = 'flex';
                     batchButtonGroup.style.display = 'none';
+                    combinationButtonGroup.style.display = 'none';
                     fileInput.multiple = false;
                     uploadArea.innerHTML = `
                         <span class="upload-icon">📖</span>
@@ -1128,7 +1540,7 @@
             uploadArea.style.background = 'rgba(255, 107, 74, 0.06)';
             const files = e.dataTransfer.files;
             
-            if (currentMode === 'batch' && files.length > 0) {
+            if ((currentMode === 'batch' || currentMode === 'combination') && files.length > 0) {
                 addFilesToBatch(Array.from(files));
             } else if (files.length > 0) {
                 handleFileSelection(files[0]);
@@ -1136,7 +1548,7 @@
         });
 
         fileInput.addEventListener('change', (e) => {
-            if (currentMode === 'batch' && e.target.files.length > 0) {
+            if ((currentMode === 'batch' || currentMode === 'combination') && e.target.files.length > 0) {
                 addFilesToBatch(Array.from(e.target.files));
             } else if (e.target.files.length > 0) {
                 handleFileSelection(e.target.files[0]);
@@ -1192,6 +1604,7 @@
 
                 convertBtn.disabled = false;
                 advancedBtn.disabled = false;
+                editorBtn.disabled = false;
 
                 statusMessage.classList.remove('show', 'loading', 'error', 'success');
                 console.log(`✅ File loaded! Total pages: ${totalPages}`);
@@ -1233,6 +1646,25 @@
         const sliderStartLabel = document.getElementById('sliderStartLabel');
         const sliderEndLabel = document.getElementById('sliderEndLabel');
         const presetBtns = document.querySelectorAll('.preset-btn');
+        const editorBtn = document.getElementById('editorBtn');
+        const combinationEditorBtn = document.getElementById('combinationEditorBtn');
+        const editorContainer = document.getElementById('editorContainer');
+        const editorGrid = document.getElementById('editorGrid');
+        const closeEditorBtn = document.getElementById('closeEditorBtn');
+        const applyEditorBtn = document.getElementById('applyEditorBtn');
+        const selectAllBtn = document.getElementById('selectAllBtn');
+        const deselectAllBtn = document.getElementById('deselectAllBtn');
+        const allWhiteBtn = document.getElementById('allWhiteBtn');
+        const allBlackBtn = document.getElementById('allBlackBtn');
+        const totalPagesEditor = document.getElementById('totalPagesEditor');
+        const includedPages = document.getElementById('includedPages');
+        const removedPages = document.getElementById('removedPages');
+        const fileSelectorSection = document.getElementById('fileSelectorSection');
+        const fileList = document.getElementById('fileList');
+
+        let editorPages = [];
+        let currentEditingFile = null;
+        let combinationEditorData = {};
 
         let totalPages = 0;
         let pageRange = { start: 1, end: 1 };
@@ -1332,6 +1764,326 @@
             await performConversion();
         });
 
+        // Editor button handlers
+        editorBtn.addEventListener('click', async () => {
+            if (!selectedFile) return;
+            
+            showStatus('🎨 Loading editor...', 'loading');
+            editorContainer.classList.add('show');
+            
+            try {
+                await loadEditorForFile(selectedFile);
+                statusMessage.classList.remove('show');
+            } catch (error) {
+                showStatus(`❌ Error loading editor: ${error.message}`, 'error');
+                editorContainer.classList.remove('show');
+            }
+        });
+
+        combinationEditorBtn.addEventListener('click', () => {
+            if (batchFiles.length === 0) return;
+            
+            fileSelectorSection.classList.add('show');
+            editorContainer.classList.remove('show');
+            
+            fileList.innerHTML = '';
+            batchFiles.forEach((file, index) => {
+                const fileItem = document.createElement('div');
+                fileItem.className = 'file-item';
+                fileItem.innerHTML = `
+                    <span class="file-item-name">${file.name}</span>
+                    <span class="file-item-pages">Click to edit</span>
+                `;
+                fileItem.addEventListener('click', async () => {
+                    document.querySelectorAll('.file-item').forEach(item => item.classList.remove('active'));
+                    fileItem.classList.add('active');
+                    
+                    currentEditingFile = file;
+                    showStatus('🎨 Loading editor...', 'loading');
+                    
+                    try {
+                        await loadEditorForFile(file);
+                        fileSelectorSection.classList.remove('show');
+                        editorContainer.classList.add('show');
+                        statusMessage.classList.remove('show');
+                    } catch (error) {
+                        showStatus(`❌ Error loading editor: ${error.message}`, 'error');
+                    }
+                });
+                fileList.appendChild(fileItem);
+            });
+        });
+
+        async function loadEditorForFile(file) {
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            const response = await fetch('/api/get-pages-preview', {
+                method: 'POST',
+                body: formData
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to load pages');
+            }
+            
+            const data = await response.json();
+            
+            // Initialize editor data for this file if not exists
+            if (!combinationEditorData[file.name]) {
+                combinationEditorData[file.name] = data.pages.map((page, index) => ({
+                    index: index,
+                    included: true,
+                    bgColor: 'white',
+                    imageData: page.imageData
+                }));
+            }
+            
+            editorPages = combinationEditorData[file.name];
+            renderEditorGrid();
+
+            // Show/hide Apply & Convert button based on mode
+            const editorButtonGroup = document.getElementById('editorButtonGroup');
+            const applyEditorBtn = document.getElementById('applyEditorBtn');
+            const closeEditorBtn = document.getElementById('closeEditorBtn');
+            
+            if (currentMode === 'combination') {
+                applyEditorBtn.style.display = 'none';
+                closeEditorBtn.style.flex = '1';
+                closeEditorBtn.textContent = 'Save & Close';
+            } else {
+                applyEditorBtn.style.display = 'inline-flex';
+                closeEditorBtn.style.flex = '1';
+                closeEditorBtn.textContent = 'Cancel';
+            }
+        }
+
+        function renderEditorGrid() {
+            editorGrid.innerHTML = '';
+            
+            editorPages.forEach((page, index) => {
+                const pageCard = document.createElement('div');
+                pageCard.className = `page-card ${page.included ? '' : 'removed'}`;
+                
+                pageCard.innerHTML = `
+                    <div class="page-number">Page ${index + 1}</div>
+                    <div class="page-preview">
+                        <img src="${page.imageData}" alt="Page ${index + 1}" />
+                    </div>
+                    <div class="page-controls">
+                        <div class="bg-toggle">
+                            <button class="bg-option ${page.bgColor === 'white' ? 'active' : ''}" data-index="${index}" data-bg="white">
+                                White
+                            </button>
+                            <button class="bg-option ${page.bgColor === 'black' ? 'active' : ''}" data-index="${index}" data-bg="black">
+                                Black
+                            </button>
+                        </div>
+                        <button class="remove-page-btn ${page.included ? '' : 'restore'}" data-index="${index}">
+                            ${page.included ? '🗑️ Remove' : '↩️ Restore'}
+                        </button>
+                    </div>
+                `;
+                
+                editorGrid.appendChild(pageCard);
+            });
+            
+            updateEditorStats();
+            attachEditorEventListeners();
+        }
+
+        function attachEditorEventListeners() {
+            document.querySelectorAll('.bg-option').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const index = parseInt(e.target.dataset.index);
+                    const bg = e.target.dataset.bg;
+                    
+                    editorPages[index].bgColor = bg;
+                    
+                    const parentToggle = e.target.parentElement;
+                    parentToggle.querySelectorAll('.bg-option').forEach(b => b.classList.remove('active'));
+                    e.target.classList.add('active');
+                });
+            });
+            
+            document.querySelectorAll('.remove-page-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const index = parseInt(e.target.dataset.index);
+                    
+                    editorPages[index].included = !editorPages[index].included;
+                    renderEditorGrid();
+                });
+            });
+        }
+
+        function updateEditorStats() {
+            const total = editorPages.length;
+            const included = editorPages.filter(p => p.included).length;
+            const removed = total - included;
+            
+            totalPagesEditor.textContent = total;
+            includedPages.textContent = included;
+            removedPages.textContent = removed;
+        }
+
+        closeEditorBtn.addEventListener('click', () => {
+            // Save editor data for combination mode
+            if (currentMode === 'combination' && currentEditingFile) {
+                combinationEditorData[currentEditingFile.name] = editorPages.map(page => ({
+                    index: page.index,
+                    included: page.included,
+                    bgColor: page.bgColor
+                }));
+                showStatus('✅ Changes saved! Edit another file or click "Combine into One PDF"', 'success');
+                setTimeout(() => {
+                    statusMessage.classList.remove('show');
+                }, 2500);
+            }
+            
+            editorContainer.classList.remove('show');
+            if (currentMode === 'combination') {
+                fileSelectorSection.classList.add('show');
+            }
+        });
+
+        selectAllBtn.addEventListener('click', () => {
+            editorPages.forEach(page => page.included = true);
+            renderEditorGrid();
+        });
+
+        deselectAllBtn.addEventListener('click', () => {
+            editorPages.forEach(page => page.included = false);
+            renderEditorGrid();
+        });
+
+        allWhiteBtn.addEventListener('click', () => {
+            editorPages.forEach(page => page.bgColor = 'white');
+            renderEditorGrid();
+        });
+
+        allBlackBtn.addEventListener('click', () => {
+            editorPages.forEach(page => page.bgColor = 'black');
+            renderEditorGrid();
+        });
+
+        applyEditorBtn.addEventListener('click', async () => {
+            if (currentMode === 'single') {
+                await performEditorConversion();
+            } else if (currentMode === 'combination') {
+                // Save current file's editor data
+                if (currentEditingFile) {
+                    combinationEditorData[currentEditingFile.name] = [...editorPages];
+                }
+                
+                // Check if all files have been edited
+                const allEdited = batchFiles.every(file => combinationEditorData[file.name]);
+                
+                if (!allEdited) {
+                    editorContainer.classList.remove('show');
+                    fileSelectorSection.classList.add('show');
+                    showStatus('⚠️ Please edit all files before converting', 'error');
+                    return;
+                }
+                
+                await performCombinationEditorConversion();
+            }
+        });
+
+        async function performEditorConversion() {
+            if (!selectedFile) return;
+            
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            formData.append('editorData', JSON.stringify(editorPages));
+            
+            applyEditorBtn.disabled = true;
+            showStatus('⚡ Converting with custom settings... Please wait! ⏳', 'loading');
+            
+            try {
+                const response = await fetch('/api/convert-with-editor', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Conversion failed');
+                }
+                
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = selectedFile.name.replace(/\.(cbr|cbz)$/i, '.pdf');
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+                
+                showStatus('✅ Success! PDF created with custom settings!', 'success');
+                setTimeout(() => {
+                    resetForm();
+                    editorContainer.classList.remove('show');
+                }, 2500);
+                
+            } catch (error) {
+                console.error('Conversion error:', error);
+                showStatus(`❌ Error: ${error.message}`, 'error');
+                applyEditorBtn.disabled = false;
+            }
+        }
+
+        async function performCombinationEditorConversion() {
+            const formData = new FormData();
+            
+            batchFiles.forEach(file => {
+                formData.append('files', file);
+            });
+            
+            formData.append('combinationEditorData', JSON.stringify(combinationEditorData));
+            
+            applyEditorBtn.disabled = true;
+            showStatus('🔗 Combining files with custom settings... Please wait! ⏳', 'loading');
+            
+            try {
+                const response = await fetch('/api/combine-convert-with-editor', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Combination conversion failed');
+                }
+                
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'combined-comic-edited.pdf';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+                
+                showStatus('✅ Success! Combined PDF created with custom settings!', 'success');
+                setTimeout(() => {
+                    batchFiles = [];
+                    fileInput.value = '';
+                    updateBatchQueue();
+                    editorContainer.classList.remove('show');
+                    fileSelectorSection.classList.remove('show');
+                    combinationEditorData = {};
+                    statusMessage.classList.remove('show');
+                }, 2500);
+                
+            } catch (error) {
+                console.error('Combination conversion error:', error);
+                showStatus(`❌ Error: ${error.message}`, 'error');
+                applyEditorBtn.disabled = false;
+            }
+        }
+
         function resetForm() {
             fileInput.value = '';
             selectedFile = null;
@@ -1342,9 +2094,15 @@
             `;
             convertBtn.disabled = true;
             advancedBtn.disabled = true;
+            editorBtn.disabled = true;
             statusMessage.classList.remove('show', 'success', 'error', 'loading');
             pageRange = { start: 1, end: 1 };
             totalPages = 0;
+            editorContainer.classList.remove('show');
+            fileSelectorSection.classList.remove('show');
+            editorPages = [];
+            currentEditingFile = null;
+            combinationEditorData = {};
         }
 
         function showStatus(message, type) {
@@ -1407,6 +2165,7 @@
                 showStatus(`❌ Error: ${error.message}`, 'error');
                 convertBtn.disabled = false;
                 advancedBtn.disabled = false;
+                editorBtn.disabled = false;
             }
         }
 
@@ -1425,6 +2184,10 @@
                 }
             });
             updateBatchQueue();
+
+            if (currentMode === 'combination' && batchFiles.length > 0) {
+                combinationEditorBtn.disabled = false;
+            }
         }
 
         function updateBatchQueue() {
@@ -1440,11 +2203,27 @@
             });
             queueCount.textContent = batchFiles.length;
             batchConvertBtn.disabled = batchFiles.length === 0;
+            if (typeof combinationConvertBtn !== 'undefined') {
+                combinationConvertBtn.disabled = batchFiles.length === 0;
+                combinationEditorBtn.disabled = batchFiles.length === 0;
+            }
         }
 
         function removeBatchFile(index) {
+            const removedFile = batchFiles[index];
             batchFiles.splice(index, 1);
+            
+            // Remove editor data for this file if it exists
+            if (removedFile && combinationEditorData[removedFile.name]) {
+                delete combinationEditorData[removedFile.name];
+            }
+            
             updateBatchQueue();
+            
+            // Disable editor button if no files left
+            if (batchFiles.length === 0) {
+                combinationEditorBtn.disabled = true;
+            }
         }
 
         window.removeBatchFile = removeBatchFile;
@@ -1454,6 +2233,8 @@
             fileInput.value = '';
             updateBatchQueue();
             statusMessage.classList.remove('show');
+            combinationEditorData = {};
+            combinationEditorBtn.disabled = true;
         });
 
         batchConvertBtn.addEventListener('click', async () => {
@@ -1506,6 +2287,82 @@
                 batchConvertBtn.disabled = false;
             }
         });
+
+        const combinationConvertBtn = document.getElementById('combinationConvertBtn');
+    const combinationClearBtn = document.getElementById('combinationClearBtn');
+
+    combinationClearBtn.addEventListener('click', () => {
+        batchFiles = [];
+        fileInput.value = '';
+        updateBatchQueue();
+        statusMessage.classList.remove('show');
+        combinationEditorData = {};
+        combinationEditorBtn.disabled = true;
+        editorContainer.classList.remove('show');
+        fileSelectorSection.classList.remove('show');
+    });
+
+    combinationConvertBtn.addEventListener('click', async () => {
+        if (batchFiles.length === 0) return;
+
+        const formData = new FormData();
+        batchFiles.forEach(file => {
+            formData.append('files', file);
+        });
+        formData.append('bgColor', document.getElementById('bgColor').value);
+        formData.append('quality', document.getElementById('quality').value);
+
+        // Check if we have any editor data
+        const hasEditorData = Object.keys(combinationEditorData).length > 0;
+        let endpoint = '/api/combine-convert';
+        
+        if (hasEditorData) {
+            // Use editor endpoint with custom settings
+            endpoint = '/api/combine-convert-with-editor';
+            formData.append('combinationEditorData', JSON.stringify(combinationEditorData));
+            console.log('🎨 Using editor settings for combination');
+        }
+
+        combinationConvertBtn.disabled = true;
+        showStatus(`🔗 Combining ${batchFiles.length} files into one PDF... Please wait! ⏳`, 'loading');
+
+        try {
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Combination conversion failed');
+            }
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = hasEditorData ? 'combined-comic-edited.pdf' : 'combined-comic.pdf';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+
+            showStatus(`✅ Success! Combined ${batchFiles.length} files into one PDF!`, 'success');
+            setTimeout(() => {
+                batchFiles = [];
+                fileInput.value = '';
+                updateBatchQueue();
+                statusMessage.classList.remove('show');
+                combinationEditorData = {};
+                combinationEditorBtn.disabled = true;
+            }, 2500);
+            
+        } catch (error) {
+            console.error('Combination conversion error:', error);
+            showStatus(`❌ Error: ${error.message}`, 'error');
+            combinationConvertBtn.disabled = false;
+        }
+    });
     </script>
 </body>
 </html>
