@@ -18,7 +18,10 @@ app.use(express.urlencoded({ extended: true }));
 // Configure multer for file uploads
 const upload = multer({
     storage: multer.memoryStorage(),
-    limits: { fileSize: 500 * 1024 * 1024 },
+    limits: { 
+        fileSize: 500 * 1024 * 1024,
+        fieldSize: 50 * 1024 * 1024  
+    },
     fileFilter: (req, file, cb) => {
         const ext = path.extname(file.originalname).toLowerCase();
         if (ext === '.cbr' || ext === '.cbz') {
@@ -446,6 +449,591 @@ app.post('/api/batch-convert', upload.array('files', 20), async (req, res) => {
     } catch (error) {
         console.error('Batch conversion error:', error);
         res.status(500).json({ error: error.message || 'Batch conversion failed' });
+    } finally {
+        if (tempDir && fs.existsSync(tempDir)) {
+            fs.rmSync(tempDir, { recursive: true, force: true });
+        }
+    }
+});
+
+// Combination file conversion endpoint (merge all into one PDF)
+app.post('/api/combine-convert', upload.array('files', 20), async (req, res) => {
+    let tempDir;
+    try {
+        if (!req.files || req.files.length === 0) {
+            return res.status(400).json({ error: 'No files uploaded' });
+        }
+        
+        const bgColor = req.body.bgColor || 'white';
+        const quality = parseInt(req.body.quality) || 75;
+        
+        tempDir = path.join(__dirname, 'temp', Date.now().toString());
+        if (!fs.existsSync(tempDir)) {
+            fs.mkdirSync(tempDir, { recursive: true });
+        }
+        
+        console.log(`\n🔗 Starting combination of ${req.files.length} files into one PDF...`);
+        
+        const pdfDoc = await PDFDocument.create();
+        
+        for (let i = 0; i < req.files.length; i++) {
+            const file = req.files[i];
+            try {
+                console.log(`[${i + 1}/${req.files.length}] Processing: ${file.originalname}`);
+                
+                const { imageFiles, extractor, imageData } = await extractImagesFromArchive(file.buffer, file.originalname);
+                
+                console.log(`  📄 Extracting ${imageFiles.length} pages from ${file.originalname}...`);
+                
+                const extractedImages = [];
+                
+                if (extractor) {
+                    const extracted = extractor.extract({
+                        files: imageFiles
+                    });
+                    
+                    const extractedMap = {};
+                    for (const extractedFile of extracted.files) {
+                        if (extractedFile.extraction) {
+                            const fullPath = extractedFile.fileHeader.name;
+                            extractedMap[fullPath] = {
+                                name: fullPath,
+                                data: Buffer.from(extractedFile.extraction)
+                            };
+                        }
+                    }
+                    
+                    for (const imagePath of imageFiles) {
+                        if (extractedMap[imagePath]) {
+                            extractedImages.push(extractedMap[imagePath]);
+                        }
+                    }
+                } else if (imageData) {
+                    for (const imagePath of imageFiles) {
+                        if (imageData[imagePath]) {
+                            extractedImages.push({
+                                name: imagePath,
+                                data: imageData[imagePath]
+                            });
+                        }
+                    }
+                }
+                
+                // Add each image as a page to the combined PDF
+                for (const imageFile of extractedImages) {
+                    try {
+                        let imageDataBuffer = imageFile.data;
+                        const ext = path.extname(imageFile.name).toLowerCase();
+                        
+                        if (ext === '.png') {
+                            imageDataBuffer = await sharp(imageDataBuffer)
+                                .png({ compressionLevel: Math.floor(quality / 20) })
+                                .toBuffer();
+                        } else {
+                            imageDataBuffer = await sharp(imageDataBuffer)
+                                .jpeg({ quality: quality, progressive: true })
+                                .toBuffer();
+                        }
+                        
+                        const metadata = await sharp(imageDataBuffer).metadata();
+                        const imgWidth = metadata.width;
+                        const imgHeight = metadata.height;
+                        
+                        const margin = 0;
+                        const availableWidth = A4_WIDTH - (2 * margin);
+                        const availableHeight = A4_HEIGHT - (2 * margin);
+                        
+                        let finalWidth = availableWidth;
+                        let finalHeight = (imgWidth > 0) ? (availableWidth * imgHeight) / imgWidth : availableHeight;
+                        
+                        if (finalHeight > availableHeight) {
+                            finalHeight = availableHeight;
+                            finalWidth = (imgHeight > 0) ? (availableHeight * imgWidth) / imgHeight : availableWidth;
+                        }
+                        
+                        const page = pdfDoc.addPage([A4_WIDTH, A4_HEIGHT]);
+                        
+                        if (bgColor === 'black') {
+                            page.drawRectangle({
+                                x: 0,
+                                y: 0,
+                                width: A4_WIDTH,
+                                height: A4_HEIGHT,
+                                color: rgb(0, 0, 0)
+                            });
+                        } else {
+                            page.drawRectangle({
+                                x: 0,
+                                y: 0,
+                                width: A4_WIDTH,
+                                height: A4_HEIGHT,
+                                color: rgb(1, 1, 1)
+                            });
+                        }
+                        
+                        let image;
+                        if (ext === '.png') {
+                            image = await pdfDoc.embedPng(imageDataBuffer);
+                        } else {
+                            image = await pdfDoc.embedJpg(imageDataBuffer);
+                        }
+                        
+                        const xPos = (A4_WIDTH - finalWidth) / 2;
+                        const yPos = (A4_HEIGHT - finalHeight) / 2;
+                        
+                        page.drawImage(image, {
+                            x: xPos,
+                            y: yPos,
+                            width: finalWidth,
+                            height: finalHeight
+                        });
+                        
+                    } catch (err) {
+                        console.error(`  ❌ Error processing image ${imageFile.name}:`, err.message);
+                    }
+                }
+                
+                console.log(`  ✅ Added ${extractedImages.length} pages from ${file.originalname}`);
+                
+            } catch (error) {
+                console.error(`❌ Error processing ${file.originalname}:`, error.message);
+            }
+        }
+        
+        const pdfBytes = await pdfDoc.save();
+        
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Length', pdfBytes.length);
+        res.setHeader('Content-Disposition', 'attachment; filename="combined-comic.pdf"');
+        res.send(Buffer.from(pdfBytes));
+        
+        console.log(`\n✅ Combination completed! All files merged into one PDF\n`);
+        
+    } catch (error) {
+        console.error('Combination conversion error:', error);
+        res.status(500).json({ error: error.message || 'Combination conversion failed' });
+    } finally {
+        if (tempDir && fs.existsSync(tempDir)) {
+            fs.rmSync(tempDir, { recursive: true, force: true });
+        }
+    }
+});
+
+// Get pages preview for editor
+app.post('/api/get-pages-preview', upload.single('file'), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ error: 'No file uploaded' });
+        }
+        
+        const { imageFiles, extractor, imageData } = await extractImagesFromArchive(req.file.buffer, req.file.originalname);
+        
+        const pages = [];
+        
+        // Extract first 100 pages for preview
+        const previewLimit = Math.min(imageFiles.length, 100);
+        const requiredImageFiles = imageFiles.slice(0, previewLimit);
+        
+        console.log(`🎨 Generating previews for ${previewLimit} pages...`);
+        
+        if (extractor) {
+            const extracted = extractor.extract({
+                files: requiredImageFiles
+            });
+            
+            const extractedMap = {};
+            for (const file of extracted.files) {
+                if (file.extraction) {
+                    extractedMap[file.fileHeader.name] = Buffer.from(file.extraction);
+                }
+            }
+            
+            for (const imagePath of requiredImageFiles) {
+                if (extractedMap[imagePath]) {
+                    const thumbnail = await sharp(extractedMap[imagePath])
+                        .resize(300, null, { fit: 'inside' })
+                        .jpeg({ quality: 60 })
+                        .toBuffer();
+                    
+                    pages.push({
+                        imageData: `data:image/jpeg;base64,${thumbnail.toString('base64')}`
+                    });
+                }
+            }
+        } else if (imageData) {
+            for (const imagePath of requiredImageFiles) {
+                if (imageData[imagePath]) {
+                    const thumbnail = await sharp(imageData[imagePath])
+                        .resize(300, null, { fit: 'inside' })
+                        .jpeg({ quality: 60 })
+                        .toBuffer();
+                    
+                    pages.push({
+                        imageData: `data:image/jpeg;base64,${thumbnail.toString('base64')}`
+                    });
+                }
+            }
+        }
+        
+        console.log(`✅ Generated ${pages.length} previews`);
+        res.json({ pages, totalPages: imageFiles.length });
+        
+    } catch (error) {
+        console.error('Error getting pages preview:', error);
+        res.status(500).json({ error: error.message || 'Failed to get pages preview' });
+    }
+});
+
+// Convert with editor settings (single mode)
+app.post('/api/convert-with-editor', upload.single('file'), async (req, res) => {
+    let tempDir;
+    try {
+        if (!req.file) {
+            return res.status(400).json({ error: 'No file uploaded' });
+        }
+        
+        const editorData = JSON.parse(req.body.editorData);
+        const quality = 75; // Default quality
+        
+        tempDir = path.join(__dirname, 'temp', Date.now().toString());
+        if (!fs.existsSync(tempDir)) {
+            fs.mkdirSync(tempDir, { recursive: true });
+        }
+        
+        const { imageFiles, extractor, imageData } = await extractImagesFromArchive(req.file.buffer, req.file.originalname);
+        
+        // Get only included pages
+        const includedPages = editorData.filter(page => page.included);
+        const requiredImageFiles = includedPages.map(page => imageFiles[page.index]);
+        
+        console.log(`\n📝 Converting ${includedPages.length} selected pages from ${imageFiles.length} total pages`);
+        
+        const extractedImages = [];
+        
+        if (extractor) {
+            const extracted = extractor.extract({
+                files: requiredImageFiles
+            });
+            
+            const extractedMap = {};
+            for (const file of extracted.files) {
+                if (file.extraction) {
+                    extractedMap[file.fileHeader.name] = {
+                        data: Buffer.from(file.extraction)
+                    };
+                }
+            }
+            
+            for (const imagePath of requiredImageFiles) {
+                if (extractedMap[imagePath]) {
+                    extractedImages.push(extractedMap[imagePath]);
+                }
+            }
+        } else if (imageData) {
+            for (const imagePath of requiredImageFiles) {
+                if (imageData[imagePath]) {
+                    extractedImages.push({
+                        data: imageData[imagePath]
+                    });
+                }
+            }
+        }
+        
+        // Create PDF with custom settings per page
+        const pdfDoc = await PDFDocument.create();
+        
+        for (let i = 0; i < extractedImages.length; i++) {
+            const imageFile = extractedImages[i];
+            const pageSettings = includedPages[i];
+            
+            try {
+                let imageDataBuffer = imageFile.data;
+                
+                // Determine if PNG or JPG based on buffer
+                let isPng = false;
+                if (imageDataBuffer[0] === 0x89 && imageDataBuffer[1] === 0x50) {
+                    isPng = true;
+                }
+                
+                if (isPng) {
+                    imageDataBuffer = await sharp(imageDataBuffer)
+                        .png({ compressionLevel: Math.floor(quality / 20) })
+                        .toBuffer();
+                } else {
+                    imageDataBuffer = await sharp(imageDataBuffer)
+                        .jpeg({ quality: quality, progressive: true })
+                        .toBuffer();
+                }
+                
+                const metadata = await sharp(imageDataBuffer).metadata();
+                const imgWidth = metadata.width;
+                const imgHeight = metadata.height;
+                
+                const margin = 0;
+                const availableWidth = A4_WIDTH - (2 * margin);
+                const availableHeight = A4_HEIGHT - (2 * margin);
+                
+                let finalWidth = availableWidth;
+                let finalHeight = (imgWidth > 0) ? (availableWidth * imgHeight) / imgWidth : availableHeight;
+                
+                if (finalHeight > availableHeight) {
+                    finalHeight = availableHeight;
+                    finalWidth = (imgHeight > 0) ? (availableHeight * imgWidth) / imgHeight : availableWidth;
+                }
+                
+                const page = pdfDoc.addPage([A4_WIDTH, A4_HEIGHT]);
+                
+                // Use custom background color per page
+                if (pageSettings.bgColor === 'black') {
+                    page.drawRectangle({
+                        x: 0,
+                        y: 0,
+                        width: A4_WIDTH,
+                        height: A4_HEIGHT,
+                        color: rgb(0, 0, 0)
+                    });
+                } else {
+                    page.drawRectangle({
+                        x: 0,
+                        y: 0,
+                        width: A4_WIDTH,
+                        height: A4_HEIGHT,
+                        color: rgb(1, 1, 1)
+                    });
+                }
+                
+                let image;
+                if (isPng) {
+                    image = await pdfDoc.embedPng(imageDataBuffer);
+                } else {
+                    image = await pdfDoc.embedJpg(imageDataBuffer);
+                }
+                
+                const xPos = (A4_WIDTH - finalWidth) / 2;
+                const yPos = (A4_HEIGHT - finalHeight) / 2;
+                
+                page.drawImage(image, {
+                    x: xPos,
+                    y: yPos,
+                    width: finalWidth,
+                    height: finalHeight
+                });
+                
+                console.log(`  ✅ Page ${i + 1}/${includedPages.length} - BG: ${pageSettings.bgColor}`);
+                
+            } catch (err) {
+                console.error(`  ❌ Error processing page ${i + 1}:`, err.message);
+            }
+        }
+        
+        const pdfBytes = await pdfDoc.save();
+        
+        const fileName = req.file.originalname.replace(/\.(cbr|cbz)$/i, '.pdf');
+        
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Length', pdfBytes.length);
+        res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+        res.send(Buffer.from(pdfBytes));
+        
+        console.log(`✅ Editor conversion completed: ${fileName}\n`);
+        
+    } catch (error) {
+        console.error('Editor conversion error:', error);
+        res.status(500).json({ error: error.message || 'Conversion failed' });
+    } finally {
+        if (tempDir && fs.existsSync(tempDir)) {
+            fs.rmSync(tempDir, { recursive: true, force: true });
+        }
+    }
+});
+
+// Combine convert with editor settings (combination mode)
+app.post('/api/combine-convert-with-editor', upload.array('files', 20), async (req, res) => {
+    let tempDir;
+    try {
+        if (!req.files || req.files.length === 0) {
+            return res.status(400).json({ error: 'No files uploaded' });
+        }
+        
+        const combinationEditorData = req.body.combinationEditorData 
+            ? JSON.parse(req.body.combinationEditorData) 
+            : {};
+        const quality = 75;
+        
+        tempDir = path.join(__dirname, 'temp', Date.now().toString());
+        if (!fs.existsSync(tempDir)) {
+            fs.mkdirSync(tempDir, { recursive: true });
+        }
+        
+        console.log(`\n🔗 Starting combination with editor settings for ${req.files.length} files...`);
+        
+        const pdfDoc = await PDFDocument.create();
+        
+        for (let fileIdx = 0; fileIdx < req.files.length; fileIdx++) {
+            const file = req.files[fileIdx];
+            const fileEditorData = combinationEditorData[file.originalname];
+            
+            if (!fileEditorData) {
+                console.log(`⚠️ No editor data for ${file.originalname}, using all pages with default settings...`);
+                continue;
+            }
+            
+            try {
+                console.log(`[${fileIdx + 1}/${req.files.length}] Processing: ${file.originalname}`);
+                
+                const { imageFiles, extractor, imageData } = await extractImagesFromArchive(file.buffer, file.originalname);
+                
+                // Get only included pages, or all pages if no editor data
+                let includedPages;
+                let requiredImageFiles;
+
+                if (fileEditorData) {
+                    includedPages = fileEditorData.filter(page => page.included);
+                    requiredImageFiles = includedPages.map(page => imageFiles[page.index]);
+                    console.log(`  📄 Processing ${includedPages.length} included pages from ${imageFiles.length} total pages`);
+                } else {
+                    // Use all pages with default white background
+                    includedPages = imageFiles.map((_, index) => ({
+                        index: index,
+                        included: true,
+                        bgColor: 'white'
+                    }));
+                    requiredImageFiles = imageFiles;
+                    console.log(`  📄 Processing all ${imageFiles.length} pages with default settings`);
+                }
+                
+                const extractedImages = [];
+                
+                if (extractor) {
+                    const extracted = extractor.extract({
+                        files: requiredImageFiles
+                    });
+                    
+                    const extractedMap = {};
+                    for (const extractedFile of extracted.files) {
+                        if (extractedFile.extraction) {
+                            extractedMap[extractedFile.fileHeader.name] = {
+                                data: Buffer.from(extractedFile.extraction)
+                            };
+                        }
+                    }
+                    
+                    for (const imagePath of requiredImageFiles) {
+                        if (extractedMap[imagePath]) {
+                            extractedImages.push(extractedMap[imagePath]);
+                        }
+                    }
+                } else if (imageData) {
+                    for (const imagePath of requiredImageFiles) {
+                        if (imageData[imagePath]) {
+                            extractedImages.push({
+                                data: imageData[imagePath]
+                            });
+                        }
+                    }
+                }
+                
+                // Add each image to the combined PDF
+                for (let i = 0; i < extractedImages.length; i++) {
+                    const imageFile = extractedImages[i];
+                    const pageSettings = includedPages[i];
+                    
+                    try {
+                        let imageDataBuffer = imageFile.data;
+                        
+                        let isPng = false;
+                        if (imageDataBuffer[0] === 0x89 && imageDataBuffer[1] === 0x50) {
+                            isPng = true;
+                        }
+                        
+                        if (isPng) {
+                            imageDataBuffer = await sharp(imageDataBuffer)
+                                .png({ compressionLevel: Math.floor(quality / 20) })
+                                .toBuffer();
+                        } else {
+                            imageDataBuffer = await sharp(imageDataBuffer)
+                                .jpeg({ quality: quality, progressive: true })
+                                .toBuffer();
+                        }
+                        
+                        const metadata = await sharp(imageDataBuffer).metadata();
+                        const imgWidth = metadata.width;
+                        const imgHeight = metadata.height;
+                        
+                        const margin = 0;
+                        const availableWidth = A4_WIDTH - (2 * margin);
+                        const availableHeight = A4_HEIGHT - (2 * margin);
+                        
+                        let finalWidth = availableWidth;
+                        let finalHeight = (imgWidth > 0) ? (availableWidth * imgHeight) / imgWidth : availableHeight;
+                        
+                        if (finalHeight > availableHeight) {
+                            finalHeight = availableHeight;
+                            finalWidth = (imgHeight > 0) ? (availableHeight * imgWidth) / imgHeight : availableWidth;
+                        }
+                        
+                        const page = pdfDoc.addPage([A4_WIDTH, A4_HEIGHT]);
+                        
+                        // Use custom background color per page
+                        if (pageSettings.bgColor === 'black') {
+                            page.drawRectangle({
+                                x: 0,
+                                y: 0,
+                                width: A4_WIDTH,
+                                height: A4_HEIGHT,
+                                color: rgb(0, 0, 0)
+                            });
+                        } else {
+                            page.drawRectangle({
+                                x: 0,
+                                y: 0,
+                                width: A4_WIDTH,
+                                height: A4_HEIGHT,
+                                color: rgb(1, 1, 1)
+                            });
+                        }
+                        
+                        let image;
+                        if (isPng) {
+                            image = await pdfDoc.embedPng(imageDataBuffer);
+                        } else {
+                            image = await pdfDoc.embedJpg(imageDataBuffer);
+                        }
+                        
+                        const xPos = (A4_WIDTH - finalWidth) / 2;
+                        const yPos = (A4_HEIGHT - finalHeight) / 2;
+                        
+                        page.drawImage(image, {
+                            x: xPos,
+                            y: yPos,
+                            width: finalWidth,
+                            height: finalHeight
+                        });
+                        
+                    } catch (err) {
+                        console.error(`  ❌ Error processing page:`, err.message);
+                    }
+                }
+                
+                console.log(`  ✅ Added ${extractedImages.length} pages from ${file.originalname}`);
+                
+            } catch (error) {
+                console.error(`❌ Error processing ${file.originalname}:`, error.message);
+            }
+        }
+        
+        const pdfBytes = await pdfDoc.save();
+        
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Length', pdfBytes.length);
+        res.setHeader('Content-Disposition', 'attachment; filename="combined-comic-edited.pdf"');
+        res.send(Buffer.from(pdfBytes));
+        
+        console.log(`\n✅ Combination with editor completed!\n`);
+        
+    } catch (error) {
+        console.error('Combination editor conversion error:', error);
+        res.status(500).json({ error: error.message || 'Combination conversion failed' });
     } finally {
         if (tempDir && fs.existsSync(tempDir)) {
             fs.rmSync(tempDir, { recursive: true, force: true });
